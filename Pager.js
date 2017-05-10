@@ -4,6 +4,16 @@
 				count 		=> 分页数据总数(必填),
 				pageNumbers	=> 每一页的数据数量(默认10),
 				showQuikly	=> 是否添加首页和尾页
+	
+	类名命名空间pager:
+		所有按钮均有pager-span类名
+		首页：		pager-btn_first
+		最后一页：	pager-btn_last
+		上一页：	pager-btn_prev
+		下一页：	pager-btn_next
+		数字按钮：	pager-btn
+		当前页数：	active
+
 	dom选择器使用document.querySelector()
 	事件添加使用addEventListener()
 	按钮以span包裹，激活元素添加active类名
@@ -25,10 +35,14 @@ function Pager(opt){
 	this.domArr = [];
 	this.notPrev = true;
 	this.notNext = false;
+	this.oldEl = {};
 	this.countFirstPosition = 1;
 	this.init();
 }
 Pager.prototype.init = function(){
+	if(this.computeBtnNumber() <= 1){
+		this.notNext = true;
+	}
 	if(typeof this.el === 'string'){
 		this.el = document.querySelector(this.el)
 	}
@@ -48,23 +62,42 @@ Pager.prototype.createBtn = function(){
 		btnNumber = this.computeBtnNumber(),
 		i = 0;
 	for(;i<btnNumber;i++){
-		this.domArr[this.domArr.length] = this.createEl('span','pager-btn pager-span',(i+1))
+		this.domArr[this.domArr.length] = this.createEl('span','pager-btn pager-span',(i+1));
 		this.oldEl = this.domArr[0];
+		// 默认初始第一页为激活状态
 		if(i === 0){
 			this.domArr[0] = this.createEl('span','pager-btn pager-span active',(i+1))
 		}
 	}
+	// 默认添加上一页和下一页
 	this.domArr.unshift(this.createEl('span','pager-span pager-btn_prev','上一页'))
 	this.domArr[this.domArr.length] = this.createEl('span','pager-span pager-btn_next','下一页');
+	// 如果打开showQuikly则添加首页和最后一页
 	if(this.showQuikly){
+		// 数字元素坐标后移
 		this.countFirstPosition ++;
 		this.domArr.unshift(this.createEl('span','pager-btn_first pager-span','首页'))
-		this.domArr[this.domArr.length] = this.createEl('span','pager-span pager-btn_last','尾页');
+		this.domArr[this.domArr.length] = this.createEl('span','pager-span pager-btn_last','最后一页');
 	}
+	// 清空容器
+	this.el.innerHTML = '';
 	for(var i = 0;i<this.domArr.length;i++){
 		this.el.appendChild(this.domArr[i]);
 	}
 }
+// 处理上一元素以及当前激活元素信息,添加删除类名
+Pager.prototype.dealEl = function(){
+	// 解决直接点击上一页导致问题
+	if(!this.newEl) return;
+	// 解决最后一页时点击下一页导致重复执行事件分发
+	if(this.newEl === this.oldEl) return;
+	this.removeClass(this.oldEl,'active');
+	this.addClass(this.newEl,'active');
+	this.judgeNextAndPrev(this.newEl);
+	this.dispatch(this.newEl)
+	this.oldEl = this.newEl;
+}
+// 创建dom元素节点，元素名称el，元素类名cn，元素内容msg
 Pager.prototype.createEl = function(el,cn,msg){
 	var dom = document.createElement(el);
 	dom.className = cn;
@@ -73,48 +106,40 @@ Pager.prototype.createEl = function(el,cn,msg){
 }
 // 添加事件
 Pager.prototype.addEvent = function(){
-	this.el.addEventListener('click',function(e){
+	var that = this;
+	this.el.onclick = function(e){
 		e = e || window.event;
-		if(this.isTargetNmuberBtn(e.target,'pager-btn')){
-			this.removeClass(this.oldEl,'active');
-			this.addClass(e.target,'active');
-			var msg = parseInt(e.target.innerHTML);
-			this.judgeNextAndPrev(e.target);
-			this.dispatch(msg)
-			this.oldEl = e.target;
-			return;
+		// 点击数字页数事，当前源就是新激活的dom元素
+		if(that.isTargetNmuberBtn(e.target,'pager-btn')){
+			that.newEl = e.target;
 		}
-		if(this.isTargetNmuberBtn(e.target,'pager-btn_first')){
-			this.dispatch(1);
-			this.notPrev = true;
-			return;
+		// 点击首页，dom数组中的第一个数字页作为新激活的元素
+		if(that.isTargetNmuberBtn(e.target,'pager-btn_first')){
+			that.newEl = that.domArr[that.countFirstPosition]
 		}
-		if(this.isTargetNmuberBtn(e.target,'pager-btn_last')){
-			this.dispatch(this.computeBtnNumber());
-			this.notNext = false;
-			return;
+		if(that.isTargetNmuberBtn(e.target,'pager-btn_last')){
+			that.newEl = that.domArr[that.countFirstPosition - 1 + parseInt(that.computeBtnNumber())]
 		}
-		if(this.isTargetNmuberBtn(e.target,'pager-btn_prev') && !this.notPrev){
-			var num = parseInt(this.oldEl.innerHTML) - 2 + this.countFirstPosition;
-			this.removeClass(this.oldEl,'active');
-			this.oldEl = this.domArr[num];
-			this.addClass(this.oldEl,'active');
-			this.judgeNextAndPrev(this.oldEl);
-			return;
+		if(that.isTargetNmuberBtn(e.target,'pager-btn_prev') && !that.notPrev){
+			var num = parseInt(that.oldEl.innerHTML) - 2 + that.countFirstPosition;
+			that.newEl = that.domArr[num];
 		}
-		if(this.isTargetNmuberBtn(e.target,'pager-btn_next') && !this.notNext){
-			var num = parseInt(this.oldEl.innerHTML) + this.countFirstPosition;
-			this.removeClass(this.oldEl,'active');
-			this.oldEl = this.domArr[num];
-			this.addClass(this.oldEl,'active');
-			this.judgeNextAndPrev(this.oldEl);
-			return;
+		if(that.isTargetNmuberBtn(e.target,'pager-btn_next') && !that.notNext){
+			var num = parseInt(that.oldEl.innerHTML) + that.countFirstPosition;
+			that.newEl = that.domArr[num];
+			
 		}
-
-	}.bind(this));
+		that.dealEl();
+	};
 }
+// 判断跳转到当前节点之后能上一页和下一页能否点击
 Pager.prototype.judgeNextAndPrev = function(node){
 	var num = parseInt(node.innerHTML);
+	if(this.computeBtnNumber() === 1){
+		this.notPrev = true;
+		this.notNext = true;
+		return false;
+	}
 	if(num === 1){
 		this.notPrev = true;
 		this.notNext = false;
@@ -128,6 +153,7 @@ Pager.prototype.judgeNextAndPrev = function(node){
 	this.notNext = false;
 	this.notPrev = false;
 }
+// 判断node元素是否有类名cn
 Pager.prototype.isTargetNmuberBtn = function(node,cn){
 	var className = node.className,
 		arr = [],
@@ -160,13 +186,15 @@ Pager.prototype.addClass = function(node,cn){
 	node.className = node.className + ' ' + cn;
 }
 // 事件分发
-Pager.prototype.dispatch = function(msg){
+Pager.prototype.dispatch = function(node){
 	if(!this.dispatchFun) return;
-	this.dispatchFun(msg);
+	this.dispatchFun(parseInt(node.innerHTML));
 }
 // 添加事件回调
 Pager.prototype.evon = function(func){
 	if(!func || typeof func !== 'function') return;
 	this.dispatchFun = func;
-	this.dispatchFun(1);
+	if(this.fisrtAuto){
+		this.dispatchFun(1);
+	}
 }
