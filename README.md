@@ -20,11 +20,11 @@ this is Pager
 ***
 ## 参数
 
-	el				==>	按钮容器
+	el			==>	按钮容器
 	count			==>	列表总数目
 	pageNumbers		==>	每页显示数目
 	showQuikly		==>	是否显示首页和最后一页
-	activeFirst		==> 实例化是否首先调用第一页的数量
+	activeFirst		==>	实例化是否首先调用第一页的数量
 
 ***
 ## 方法
