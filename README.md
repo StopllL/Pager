@@ -40,8 +40,8 @@ this is Pager
 	所有按钮均有pager-span类名
 	首页：		pager-btn_first
 	最后一页：	pager-btn_last
-	上一页：	pager-btn_prev
-	下一页：	pager-btn_next
+	上一页:		pager-btn_prev
+	下一页:		pager-btn_next
 	数字按钮：	pager-btn
 	当前页数：	pager-active
 	省略号:		pager-elipsis
