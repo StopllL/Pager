@@ -1,9 +1,10 @@
 /*
 	project name:Pager(分页器)
-	parameter: 	el 			=> dom元素的class或者id(必填)，
-				count 		=> 分页数据总数(必填),
-				pageNumbers	=> 每一页的数据数量(默认10),
-				showQuikly	=> 是否添加首页和尾页
+	parameter: 	el 				=> dom元素的class或者id(必填)
+				count 			=> 分页数据总数(必填)
+				pageNumbers		=> 每一页的数据数量(默认10)
+				showQuikly		=> 是否添加首页和尾页
+				limitPageNumber	=> 超过多少出现省略号(默认10)
 	
 	类名命名空间pager:
 		所有按钮均有pager-span类名
@@ -12,7 +13,8 @@
 		上一页：	pager-btn_prev
 		下一页：	pager-btn_next
 		数字按钮：	pager-btn
-		当前页数：	active
+		当前页数：	pager-active
+		省略号:		pager-elipsis
 
 	dom选择器使用document.querySelector()
 	事件添加使用addEventListener()
@@ -32,6 +34,7 @@ function Pager(opt){
 	if(!this.el) return;
 	if(!this.count) return;
 	this.pageNumbers = this.pageNumbers || 10;
+	this.limitPageNumber = this.limitPageNumber || 10;
 	this.domArr = [];
 	this.notPrev = true;
 	this.notNext = false;
@@ -66,7 +69,7 @@ Pager.prototype.createBtn = function(){
 		this.oldEl = this.domArr[0];
 		// 默认初始第一页为激活状态
 		if(i === 0){
-			this.domArr[0] = this.createEl('span','pager-btn pager-span active',(i+1))
+			this.domArr[0] = this.createEl('span','pager-btn pager-span pager-active',(i+1))
 		}
 	}
 	// 默认添加上一页和下一页
@@ -79,11 +82,51 @@ Pager.prototype.createBtn = function(){
 		this.domArr.unshift(this.createEl('span','pager-btn_first pager-span','首页'))
 		this.domArr[this.domArr.length] = this.createEl('span','pager-span pager-btn_last','最后一页');
 	}
+	this.appendChild();
+}
+Pager.prototype.appendChild = function(){
+	console.log(parseInt(this.limitPageNumber) > this.computeBtnNumber())
+	if(parseInt(this.limitPageNumber) > this.computeBtnNumber()){
+		// 清空容器
+		this.el.innerHTML = '';
+		for(var i = 0;i<this.domArr.length;i++){
+			this.el.appendChild(this.domArr[i]);
+		}
+		return false;
+	}
+	var arr = [];
+	var num = parseInt(this.oldEl.innerHTML) - 1;
+	for(var i = num;i >= 0 && i >= (num - 2);i--){
+		arr.unshift(this.domArr[(i + this.countFirstPosition)]);
+	}
+	for(var j = num+1;j<=num+2 && j < this.computeBtnNumber();j++){
+		arr[arr.length] = this.domArr[(j + this.countFirstPosition)]
+	}
+	var elipsis = this.createEl('span','pager-elipsis pager-span','...');
+	var elipsisn = this.createEl('span','pager-elipsis pager-span','...');
+	if(num > 2){
+		arr.unshift(elipsis);
+		arr.unshift(this.domArr[(this.countFirstPosition)])
+	}
+	if(this.computeBtnNumber() - num > 3){
+		arr[arr.length] = elipsisn;
+		arr[arr.length] = this.domArr[(this.computeBtnNumber() - 1 + this.countFirstPosition)]
+	}
+	if(this.showQuikly){
+		arr.unshift(this.domArr[1])
+		arr.unshift(this.domArr[0])
+		arr[arr.length] = this.domArr[this.domArr.length - 2]
+		arr[arr.length] = this.domArr[this.domArr.length - 1]
+	}else{
+		arr.unshift(this.domArr[0])
+		arr[arr.length] = this.domArr[this.domArr.length - 1]
+	}
 	// 清空容器
 	this.el.innerHTML = '';
-	for(var i = 0;i<this.domArr.length;i++){
-		this.el.appendChild(this.domArr[i]);
+	for(var i = 0;i<arr.length;i++){
+		this.el.appendChild(arr[i]);
 	}
+	
 }
 // 处理上一元素以及当前激活元素信息,添加删除类名
 Pager.prototype.dealEl = function(){
@@ -91,11 +134,12 @@ Pager.prototype.dealEl = function(){
 	if(!this.newEl) return;
 	// 解决最后一页时点击下一页导致重复执行事件分发
 	if(this.newEl === this.oldEl) return;
-	this.removeClass(this.oldEl,'active');
-	this.addClass(this.newEl,'active');
+	this.removeClass(this.oldEl,'pager-active');
+	this.addClass(this.newEl,'pager-active');
 	this.judgeNextAndPrev(this.newEl);
 	this.dispatch(this.newEl)
 	this.oldEl = this.newEl;
+	this.appendChild();
 }
 // 创建dom元素节点，元素名称el，元素类名cn，元素内容msg
 Pager.prototype.createEl = function(el,cn,msg){
