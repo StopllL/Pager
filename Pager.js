@@ -85,7 +85,6 @@ Pager.prototype.createBtn = function(){
 	this.appendChild();
 }
 Pager.prototype.appendChild = function(){
-	console.log(parseInt(this.limitPageNumber) > this.computeBtnNumber())
 	if(parseInt(this.limitPageNumber) > this.computeBtnNumber()){
 		// 清空容器
 		this.el.innerHTML = '';
@@ -122,7 +121,7 @@ Pager.prototype.appendChild = function(){
 		arr[arr.length] = this.domArr[this.domArr.length - 1]
 	}
 	// 清空容器
-	this.el.innerHTML = '';
+	this.clearEl(this.el);
 	for(var i = 0;i<arr.length;i++){
 		this.el.appendChild(arr[i]);
 	}
@@ -147,6 +146,14 @@ Pager.prototype.createEl = function(el,cn,msg){
 	dom.className = cn;
 	dom.innerHTML = msg;
 	return dom;
+}
+Pager.prototype.clearEl = function(el){
+	var childs = el.childNodes,
+		l = childs.length,
+		i = 0;
+	for(i = l - 1;i >= 0;i--){
+		el.removeChild(childs[i]);
+	}
 }
 // 添加事件
 Pager.prototype.addEvent = function(){
