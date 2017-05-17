@@ -87,7 +87,7 @@ Pager.prototype.createBtn = function(){
 Pager.prototype.appendChild = function(){
 	if(parseInt(this.limitPageNumber) > this.computeBtnNumber()){
 		// 清空容器
-		this.el.innerHTML = '';
+		this.clearEl(this.el);
 		for(var i = 0;i<this.domArr.length;i++){
 			this.el.appendChild(this.domArr[i]);
 		}
