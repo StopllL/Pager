@@ -5,6 +5,7 @@
 				pageNumbers		=> 每一页的数据数量(默认10)
 				showQuikly		=> 是否添加首页和尾页
 				limitPageNumber	=> 超过多少出现省略号(默认10)
+				fisrtAuto		=> 是否请求第一页数据(默认为false)
 	
 	类名命名空间pager:
 		所有按钮均有pager-span类名
@@ -24,30 +25,41 @@
 	eg: var pagerObj = new Pager({el:'#box',count:100})
 			pagerObj.evon(function(num){
 				console.log(num);
-			})	
+			})
+			pagerObj.refresh(options);重置分页器	
 */
 function Pager(opt){
+	this.firstAuto = false;
+	this.init(opt);
+}
+Pager.prototype.init = function(opt){
 	for(var i in opt){
 		this[i] = opt[i]
 	};
 	// el和count为必填项
 	if(!this.el) return;
-	if(!this.count) return;
+	if(!this.count && this.count !== 0) return;
+	this.count = this.count === 0 ? 1 : this.count;
 	this.pageNumbers = this.pageNumbers || 10;
 	this.limitPageNumber = this.limitPageNumber || 10;
 	this.domArr = [];
 	this.notPrev = true;
 	this.notNext = false;
 	this.oldEl = {};
+	this.newEl = false;
 	this.countFirstPosition = 1;
-	this.init();
-}
-Pager.prototype.init = function(){
+
+
 	if(this.computeBtnNumber() <= 1){
 		this.notNext = true;
 	}
 	if(typeof this.el === 'string'){
 		this.el = document.querySelector(this.el)
+	}else if(!this.el.nodeType){
+		// 如果this.el没有nodeType属性，则不是原生dom对象，判断是否为jquery对象
+		if(this.el[0] && this.el[0].nodeType){
+			this.el = this.el[0];
+		}
 	}
 	// this.el.innerHTML = this.createBtn();
 	this.createBtn();
@@ -160,25 +172,25 @@ Pager.prototype.addEvent = function(){
 	var that = this;
 	this.el.onclick = function(e){
 		e = e || window.event;
+		var target = e.target || e.srcElement;
 		// 点击数字页数事，当前源就是新激活的dom元素
-		if(that.isTargetNmuberBtn(e.target,'pager-btn')){
-			that.newEl = e.target;
+		if(that.isTargetNmuberBtn(target,'pager-btn')){
+			that.newEl = target;
 		}
 		// 点击首页，dom数组中的第一个数字页作为新激活的元素
-		if(that.isTargetNmuberBtn(e.target,'pager-btn_first')){
+		if(that.isTargetNmuberBtn(target,'pager-btn_first')){
 			that.newEl = that.domArr[that.countFirstPosition]
 		}
-		if(that.isTargetNmuberBtn(e.target,'pager-btn_last')){
+		if(that.isTargetNmuberBtn(target,'pager-btn_last')){
 			that.newEl = that.domArr[that.countFirstPosition - 1 + parseInt(that.computeBtnNumber())]
 		}
-		if(that.isTargetNmuberBtn(e.target,'pager-btn_prev') && !that.notPrev){
+		if(that.isTargetNmuberBtn(target,'pager-btn_prev') && !that.notPrev){
 			var num = parseInt(that.oldEl.innerHTML) - 2 + that.countFirstPosition;
 			that.newEl = that.domArr[num];
 		}
-		if(that.isTargetNmuberBtn(e.target,'pager-btn_next') && !that.notNext){
+		if(that.isTargetNmuberBtn(target,'pager-btn_next') && !that.notNext){
 			var num = parseInt(that.oldEl.innerHTML) + that.countFirstPosition;
 			that.newEl = that.domArr[num];
-			
 		}
 		that.dealEl();
 	};
@@ -191,12 +203,12 @@ Pager.prototype.judgeNextAndPrev = function(node){
 		this.notNext = true;
 		return false;
 	}
-	if(num === 1){
+	if(num <= 1){
 		this.notPrev = true;
 		this.notNext = false;
 		return false;
 	}
-	if(num === this.computeBtnNumber()){
+	if(num >= this.computeBtnNumber()){
 		this.notNext = true;
 		this.notPrev = false;
 		return false;
@@ -248,4 +260,7 @@ Pager.prototype.evon = function(func){
 	if(this.fisrtAuto){
 		this.dispatchFun(1);
 	}
+}
+Pager.prototype.refresh = function(opt){
+	this.init(opt);
 }
